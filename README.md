@@ -2,7 +2,7 @@
 
 This project's task will be to predict NBA games using a rolling window of games and a myriad of other statistics using time-series forecasting and Bayesian modeling. 
 
-### Data (In-Progress)
+### Data Origination & Preprocessing (In-Progress)
 
 Our data comes from the free and open-source [Kaggle dataset](https://www.kaggle.com/datasets/eoinamoore/historical-nba-data-and-player-box-scores/data) by Eoin A. Moore. All credit goes to him for developing and simplifying the data. From Kaggle, the description of the data:
 
