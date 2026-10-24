@@ -1,0 +1,20 @@
+# raw data (re-create with data/data_pulling.py); cleaned data stays tracked
+/data/raw_data/
+
+# model weights / checkpoints
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.h5
+*.keras
+*.onnx
+*.joblib
+*.pkl
+
+# environments / caches
+.venv/
+venv/
+__pycache__/
+.ipynb_checkpoints/
+.DS_Store
