@@ -1,6 +1,6 @@
 # Predicting NBA Games
 
-## Group 9: Shreeya Adhikari, Claire Hendershot, & Owen Sharpe
+## Group 9: Shreeya Adhikari, Claire Hendershot & Owen Sharpe
 
 ## Course: DS 4420, Fall 2026
 
