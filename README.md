@@ -94,6 +94,18 @@ The split is stored as a column in `games` and `team_games`. To change it, edit 
 
 **The 2012-13 Celtics vs. Pacers game was canceled** after the Boston Marathon bombing and never made up. This is real and not a data error.
 
+### LSTM model
+
+```bash
+pip install torch pyarrow scikit-learn matplotlib
+python models/lstm.py        # trains, early-stops on val log loss, saves models/output/lstm.pt
+python models/evaluate.py    # val/test metrics vs. baselines, test predictions, calibration plot
+```
+
+Each game's input is the home team's and the away team's last K games (default 10) from `team_games`, plus pre-game context: rest days, back-to-backs, neutral site and playoffs. One shared LSTM encodes both teams, and a dense head outputs the home win probability. Each timestep also carries the opponent's average net rating over its previous K games, so wins over good teams count for more. Features are standardized with train-split statistics only. Sequences run across seasons, so only each team's first K games of 2004-05 are dropped.
+
+`evaluate.py` compares the LSTM with two baselines: always picking the home team, and logistic regression on each team's averages over the same K games. It reports accuracy, log loss, Brier score and AUC. Hyperparameters are command-line flags on `lstm.py` (`--k`, `--hidden`, `--dropout`, `--lr`, `--patience`); tune them on val and leave test for the final comparison.
+
 ## Tables
 
 All tables are saved as Parquet in `data/cleaned_data/`.
