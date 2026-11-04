@@ -1,7 +1,7 @@
 """
 Name: evaluate.py
-Author: Shreeya Adhikari
-Description: evaluates the trained LSTM against two baselines on the val and test splits, and saves
+Author: Shreeya Adhikari and Claire Hendershot
+Description: evaluates the trained LSTM and Bayesian model against two baselines on the val and test splits, and saves
 the metrics table, the test predictions and a calibration plot to models/output/.
 
 Baselines:
@@ -9,7 +9,7 @@ Baselines:
   logistic     - logistic regression on each team's average over the same last K games, plus the same context
 If the LSTM can't beat the logistic baseline, the sequence modeling isn't adding anything.
 
-Usage: python models/evaluate.py   (run models/lstm.py first)
+Usage: python models/evaluate.py   (run models/lstm.py and models/bayes.py first)
 """
 
 # import libraries
@@ -19,6 +19,7 @@ import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, brier_score_loss, log_loss, roc_auc_score
 
+from bayes import PREDICTIONS
 from lstm import OUT_DIR, load_model, predict
 from sequences import build_dataset
 
@@ -66,6 +67,34 @@ def calibration_plot(y, preds, path):
     fig.savefig(path, dpi=150)
     plt.close(fig)
 
+def bayes_evaluation():
+    """
+    Adds the Bayesian model to the evaluation outputs.
+        - a row in metrics.csv for val and test
+        - a p_bayes column in test_predictions.csv
+        - a third line on calibration.png
+    Called at the end of main()
+    """
+    COLORS["Bayesian"] = "#2e9e6b"
+    _, hp = load_model()
+    _, g = build_dataset(hp["k"])
+    g = g.merge(pd.read_csv(PREDICTIONS)[["game_id", "p_bayes"]], on="game_id")
+
+    rows = []
+    for split in ["val", "test"]:
+        d = g[g.split == split]
+        rows.append({"split": split, "model": "Bayesian", "games": len(d), **metrics(d.home_win, d.p_bayes.to_numpy())})
+    results = pd.concat([pd.read_csv(OUT_DIR / "metrics.csv"), pd.DataFrame(rows)], ignore_index=False)
+    print("\nwith the Bayesian model")
+    print(results.to_string(index=False, float_format="%.4f"))
+    results.to_csv(OUT_DIR / "metrics.csv", index=False)
+
+    test_games = pd.read_csv(OUT_DIR / "test_predictions.csv").merge(g[["game_id", "p_bayes"]], on="game_id")
+    test_games.to_csv(OUT_DIR / "test_predictions.csv", index=False)
+    preds = {"LSTM": test_games.p_lstm.to_numpy(), "Logistic": test_games.p_logistic.to_numpy(),
+             "Bayesian": test_games.p_bayes.to_numpy()}
+    calibration_plot(test_games.home_win.to_numpy(), preds, OUT_DIR / "calibration.png")
+    print("\nadded Bayesian model to calibration.png, metrics.csv and test_predictions.csv")
 
 def main():
     model, hp = load_model()
@@ -102,6 +131,8 @@ def main():
 
     calibration_plot(data["test"][3], {k: test_preds[k] for k in COLORS}, OUT_DIR / "calibration.png")
     print(f"\nsaved metrics.csv, test_predictions.csv and calibration.png to {OUT_DIR}")
+
+    bayes_evaluation()
 
 
 if __name__ == "__main__":

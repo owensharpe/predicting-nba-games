@@ -106,6 +106,29 @@ Each game's input is the home team's and the away team's last K games (default 1
 
 `evaluate.py` compares the LSTM with two baselines: always picking the home team, and logistic regression on each team's averages over the same K games. It reports accuracy, log loss, Brier score and AUC. Hyperparameters are command-line flags on `lstm.py` (`--k`, `--hidden`, `--dropout`, `--lr`, `--patience`); tune them on val and leave test for the final comparison.
 
+### Bayesian model
+
+```bash
+pip install numpy pandas pyarrow
+python models/bayes.py        # trains, predicts every game day by day, saves models/output/bayes_predictions.csv
+python models/evaluate.py    # val/test metrics vs. baselines, test predictions, calibration plot
+```
+Each game's margin (home team's points - away team's points) is modeled with the following:
+$$
+margin = h * home_g + rating_{home} - rating_{away} + c_1 * b2b + c_2 * rest + noise
+$$
+$$
+noise \sim N(0, \sigma^2)
+$$
+`home` is 1 (or 0 at neutral sites), `b2b` is the back-to-back difference (-1, 0, 1) between the home and away team, and `rest` is the rest days difference between the home and away team (capped at 7) divided by 7. 
+This model uses a Gaussian prior on `h`,  `ratings`, `c1`, and `c2` and a Gaussian posterior that updates each game day.
+A little variance is added after each game day and off season. 
+A test game is predicted from every game played before it, and uses the same data as the LSTM. 
+
+`evaluate.py` scores the Bayesian model on the same val and test games as the LSTM and two baselines. 
+The Bayesian model decides that a home game is won with `P(margin > 0)`. 
+Hyperparameters are command-line flags on `bayes.py` (`--sigma`, `--rho`, `--tau`, `--drift`,); the defaults are set from prior beliefs. 
+
 ## Tables
 
 All tables are saved as Parquet in `data/cleaned_data/`.
