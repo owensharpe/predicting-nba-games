@@ -18,7 +18,6 @@ from sequences import build_dataset
 # global variables
 OUT_DIR = Path(__file__).parent / "output"
 CHECKPOINT = OUT_DIR / "mlp.pt"
-METRICS = OUT_DIR / "mlp_metrics.csv"
 PREDICTIONS = OUT_DIR / "mlp_predictions.csv"
 SEED = 4420  # same seed as the LSTM
 
@@ -155,17 +154,20 @@ def main():
         preds.append(games.assign(p_mlp=p))
 
     results = pd.DataFrame(rows)
-    results.to_csv(METRICS, index=False)
     pd.concat(preds, ignore_index=True).to_csv(PREDICTIONS, index=False)
 
     # print next to the other models if evaluate.py has been run
     print()
     others = OUT_DIR / "metrics.csv"
-    table = pd.concat([pd.read_csv(others), results]) if others.exists() else results
+    if others.exists():
+        others = pd.read_csv(others)
+        table = pd.concat([others[others["model"] != "MLP"], results])  # skip MLP rows evaluate.py already added
+    else:
+        table = results
     table["split"] = pd.Categorical(table["split"], ["val", "test"])
     print(table.sort_values("split", kind="stable").to_string(index=False, float_format="%.4f"))
 
-    print(f"\nwrote {CHECKPOINT.name}, {METRICS.name} and {PREDICTIONS.name} to {OUT_DIR}")
+    print(f"\nwrote {CHECKPOINT.name} and {PREDICTIONS.name} to {OUT_DIR}")
 
 
 if __name__ == "__main__":

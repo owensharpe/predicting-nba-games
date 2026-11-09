@@ -130,7 +130,7 @@ Hyperparameters are command-line flags on `bayes.py` (`--sigma`, `--rho`, `--tau
 
 ```bash
 pip install torch pyarrow scikit-learn
-python models/mlp.py         # trains, early-stops on val log loss, saves models/output/mlp.pt, mlp_metrics.csv and mlp_predictions.csv
+python models/mlp.py         # trains, early-stops on val log loss, saves models/output/mlp.pt and mlp_predictions.csv
 ```
 
 A plain feed-forward neural network with two hidden layers (64 and 32 units, ReLU, dropout) that outputs the home win probability. It gets the same inputs as the logistic baseline (that being each team's averages over its last K games (default 10)), plus the same pre-game context as the LSTM. Inputs are standardized with train-split statistics only, and it uses the same games, splits, seed and early stopping as the LSTM.
