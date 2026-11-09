@@ -34,9 +34,9 @@ Our data comes from the free and open-source [Kaggle dataset](https://www.kaggle
 
 - Comprehensive records of all NBA games, including home and away teams, game outcomes, and, where available, arena and attendance details. Recent entries include expanded data, with plans to retroactively update historical entries.
 
-##### 7. `LeagueSchedule24_25.csv`, `LeagueSchedule25_26.csv`
+##### 7. `LeagueSchedule26_27.csv`
 
-- The full schedule for the 2024–2025 and 2025-2026 NBA seasons, including game locations and times.
+- The full schedule for the 2026-27 NBA season, including game locations and times.
 
 ##### 8. `Players.csv`
 
