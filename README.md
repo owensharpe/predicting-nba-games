@@ -59,17 +59,17 @@ Raw data is not committed, since `data/raw_data/` is in `.gitignore`. The cleane
 
 ### Cleaning decisions
 
-**Seasons.** We use 2004-05 through 2025-26. 2004-05 is the first season with 30 teams. Seasons are labeled by start year, so `season = 2024` means 2024-25.
+We use 2004-05 through 2025-26. 2004-05 is the first season with 30 teams. Seasons are labeled by start year, so `season = 2024` means 2024-25.
 
-**Game types.** We keep regular season, play-in, playoff and NBA Cup final games. Preseason and All-Star games are dropped. Both the game type and the season are read from the game ID. The first digit is the type (2 regular season, 4 playoffs, 5 play-in, 6 Cup final), and the next two digits are the season. We use the ID instead of the dataset's `gameType` labels because the labels are inconsistent (e.g., the Cup is spelled three different ways, and one Cup final is labeled "Regular Season"). We use the ID instead of the date because the 2020 bubble playoffs ran into October.
+We keep regular season, play-in, playoff and NBA Cup final games. Preseason and All-Star games are dropped. Both the game type and the season are read from the game ID. The first digit is the type (2 regular season, 4 playoffs, 5 play-in, 6 Cup final), and the next two digits are the season. We use the ID instead of the dataset's `gameType` labels because the labels are inconsistent (e.g., the Cup is spelled three different ways, and one Cup final is labeled "Regular Season"). We use the ID instead of the date because the 2020 bubble playoffs ran into October.
 
-**Neutral sites.** A game is neutral if it was played away from the home team's usual arenas. An arena counts as a team's home if it hosted at least 5 of that team's home games in some season. This rule handles arena renames, which give the same building a new ID partway through a season. International games, the Las Vegas Cup games and the Spurs' games in Austin all get flagged. Most seasons have between 0 and 8 neutral games.
+A game is neutral if it was played away from the home team's usual arenas. An arena counts as a team's home if it hosted at least 5 of that team's home games in some season. This rule handles arena renames, which give the same building a new ID partway through a season. International games, the Las Vegas Cup games and the Spurs' games in Austin all get flagged. Most seasons have between 0 and 8 neutral games.
 
-**Bubble.** Every game from the 2019-20 restart in Orlando, July 30, 2020 onward, is flagged both `bubble` and `neutral`.
+Every game from the 2019-20 restart in Orlando, July 30, 2020 onward, is flagged both `bubble` and `neutral`.
 
-**Rest days.** Computed from each team's schedule within a season. They're known before tip-off, so they're safe to use as features.
+Computed from each team's schedule within a season. They're known before tip-off, so they're safe to use as features.
 
-**Team indices.** Each franchise keeps one team ID through relocations and renames. `teams.parquet` maps those IDs to indices 0 to 29 for the models.
+Each franchise keeps one team ID through relocations and renames. `teams.parquet` maps those IDs to indices 0 to 29 for the models.
 
 ### Splits
 
@@ -84,15 +84,15 @@ The split is stored as a column in `games` and `team_games`. To change it, edit 
 
 ### Known data issues
 
-**Seven 2024-25 games are missing.** The season has 1,223 of its 1,230 regular season games. Two are 0-0 placeholders in every source file: Jazz vs. Wizards on March 19, 2025, and Spurs vs. Magic on April 1, 2025. The other five game IDs don't appear in the source at all. Eleven teams show 80 or 81 games as a result, and their rest days run long around the gaps. The missing IDs are 22400524, 22400532, 22400537, 22400538, 22400617, 22400627 and 22400988.
+Seven 2024-25 games are missing. The season has 1,223 of its 1,230 regular season games. Two are 0-0 placeholders in every source file: Jazz vs. Wizards on March 19, 2025, and Spurs vs. Magic on April 1, 2025. The other five game IDs don't appear in the source at all. Eleven teams show 80 or 81 games as a result, and their rest days run long around the gaps. The missing IDs are 22400524, 22400532, 22400537, 22400538, 22400617, 22400627 and 22400988.
 
-**The 2023-24 and 2024-25 Cup finals have no team stats.** The final doesn't count in official statistics. Both games keep their scores, and their stat columns are empty.
+The 2023-24 and 2024-25 Cup finals have no team stats. The final doesn't count in official statistics. Both games keep their scores, and their stat columns are empty.
 
-**Offensive rebound percentage is recomputed.** The source is missing it for about 15% of rows from 2004-05 through 2016-17, and it appears to count team rebounds after that. We compute `orb_pct` for every season with the standard four-factors definition: offensive rebounds / (offensive rebounds + opponent defensive rebounds). On the 51,709 rows where both exist, ours has a 0.926 correlation with the source and averages 0.249 against the source's 0.289.
+Offensive rebound percentage is recomputed, since the source is missing it for about 15% of rows from 2004-05 through 2016-17, and it appears to count team rebounds after that. We compute `orb_pct` for every season with the standard four-factors definition: offensive rebounds / (offensive rebounds + opponent defensive rebounds). On the 51,709 rows where both exist, ours has a 0.926 correlation with the source and averages 0.249 against the source's 0.289.
 
-**Arena names and cities are blank before 2025-26.** Arena IDs exist for every season, and those are what the neutral flag uses.
+Arena names and cities are blank before 2025-26. Arena IDs exist for every season, and those are what the neutral flag uses.
 
-**The 2012-13 Celtics vs. Pacers game was canceled** after the Boston Marathon bombing and never made up. This is real and not a data error.
+The 2012-13 Celtics vs. Pacers game was canceled after the Boston Marathon bombing and never made up. This is not a data error.
 
 ### LSTM model
 
@@ -114,12 +114,9 @@ python models/bayes.py        # trains, predicts every game day by day, saves mo
 python models/evaluate.py    # val/test metrics vs. baselines, test predictions, calibration plot
 ```
 Each game's margin (home team's points - away team's points) is modeled with the following:
-$$
-margin = h * home_g + rating_{home} - rating_{away} + c_1 * b2b + c_2 * rest + noise
-$$
-$$
-noise \sim N(0, \sigma^2)
-$$
+```math
+\text{margin} = h \cdot \text{home} + \text{rating}_{\text{home}} - \text{rating}_{\text{away}} + c_1 \cdot \text{b2b} + c_2 \cdot \text{rest} + \varepsilon, \qquad \varepsilon \sim N(0, \sigma^2)
+```
 `home` is 1 (or 0 at neutral sites), `b2b` is the back-to-back difference (-1, 0, 1) between the home and away team, and `rest` is the rest days difference between the home and away team (capped at 7) divided by 7. 
 This model uses a Gaussian prior on `h`,  `ratings`, `c1`, and `c2` and a Gaussian posterior that updates each game day.
 A little variance is added after each game day and off season. 
@@ -128,6 +125,30 @@ A test game is predicted from every game played before it, and uses the same dat
 `evaluate.py` scores the Bayesian model on the same val and test games as the LSTM and two baselines. 
 The Bayesian model decides that a home game is won with `P(margin > 0)`. 
 Hyperparameters are command-line flags on `bayes.py` (`--sigma`, `--rho`, `--tau`, `--drift`,); the defaults are set from prior beliefs. 
+
+### MLP model
+
+```bash
+pip install torch pyarrow scikit-learn
+python models/mlp.py         # trains, early-stops on val log loss, saves models/output/mlp.pt, mlp_metrics.csv and mlp_predictions.csv
+```
+
+A plain feed-forward neural network with two hidden layers (64 and 32 units, ReLU, dropout) that outputs the home win probability. It gets the same inputs as the logistic baseline (that being each team's averages over its last K games (default 10)), plus the same pre-game context as the LSTM. Inputs are standardized with train-split statistics only, and it uses the same games, splits, seed and early stopping as the LSTM.
+
+The MLP sits between the two other models. Comparing it with logistic regression shows whether a non-linear model helps, and comparing the LSTM with it shows whether the order of a team's recent games matters beyond their averages.
+
+Hyperparameters are constants at the top of `mlp.py` (`K`, `HIDDEN`, `DROPOUT`, `LR`, `WEIGHT_DECAY`, `PATIENCE`). A few settings were tried on val and all landed within 0.001 log loss of each other, so we just kept defaults. Tune on val and leave test for the final comparison.
+
+### Running all the models
+
+`evaluate.py` needs the outputs of all three models, so run them first:
+
+```bash
+python models/lstm.py
+python models/bayes.py
+python models/mlp.py
+python models/evaluate.py    # writes metrics.csv, test_predictions.csv and calibration.png with every model
+```
 
 ## Tables
 

@@ -1,4 +1,4 @@
-# raw data (re-create with data/data_pulling.py); cleaned data stays tracked
+# raw data; cleaned data stays tracked
 /data/raw_data/
 
 # model weights / checkpoints
